@@ -1,0 +1,70 @@
+# kubectl create configmap ssh-config --from-file=configs/known_hosts --from-file=configs/authorized_keys
+# ssh-keygen -f configs/ssh_host_ecdsa_key -N '' -t ecdsa -b 521
+# kubectl create secret generic ssh-host-key --from-file=configs/ssh_host_ecdsa_key
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sshd-deployment
+  labels:
+    app: sshd
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sshd
+  template:
+    metadata:
+      labels:
+        app: sshd
+    spec:
+      containers:
+        - name: sshd
+          image: yutotakei/sshd:latest
+          ports:
+            - containerPort: 22
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              cpu: 250m
+              memory: 256Mi
+          volumeMounts:
+            - name: ssh-key-volume
+              mountPath: /tmp/configs/ssh_host_ecdsa_key
+              subPath: ssh_host_ecdsa_key
+              readOnly: true
+            - name: ssh-config-volume
+              mountPath: /tmp/configs/known_hosts
+              subPath: known_hosts
+              readOnly: true
+            - name: ssh-config-volume
+              mountPath: /tmp/configs/authorized_keys
+              subPath: authorized_keys
+              readOnly: true
+      volumes:
+        - name: ssh-key-volume
+          secret:
+            secretName: ssh-host-key
+            defaultMode: 0400
+        - name: ssh-config-volume
+          configMap:
+            name: ssh-config
+            defaultMode: 0444
+      restartPolicy: Always
+      nodeSelector:
+        kubernetes.io/os: linux
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: sshd-service
+spec:
+  selector:
+    app: sshd
+  ports:
+    - protocol: TCP
+      port: 22
+      targetPort: 22
+  type: LoadBalancer
