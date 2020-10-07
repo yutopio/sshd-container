@@ -1,0 +1,27 @@
+# ssh-keygen -f configs/ssh_host_ecdsa_key -N '' -t ecdsa -b 521
+
+version: '3.7'
+
+services:
+  sshd:
+    image: yutotakei/sshd:latest
+    hostname: sshd
+    ports:
+      - "22:22"
+    secrets:
+      - source: sshd-ssh_host_ecdsa_key
+        target: /mnt/secret/ssh_host_ecdsa_key
+      - source: sshd-known_hosts
+        target: /mnt/config/known_hosts
+      - source: sshd-authorized_keys
+        target: /mnt/config/authorized_keys
+    volumes:
+      - type: tmpfs
+        target: /tmp
+secrets:
+  sshd-ssh_host_ecdsa_key:
+    file: ./configs/ssh_host_ecdsa_key
+  sshd-known_hosts:
+    file: ./configs/known_hosts
+  sshd-authorized_keys:
+    file: ./configs/authorized_keys
