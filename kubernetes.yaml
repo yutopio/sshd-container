@@ -32,17 +32,18 @@ spec:
               memory: 256Mi
           volumeMounts:
             - name: ssh-key-volume
-              mountPath: /tmp/configs/ssh_host_ecdsa_key
-              subPath: ssh_host_ecdsa_key
+              mountPath: /mnt/secret
               readOnly: true
             - name: ssh-config-volume
-              mountPath: /tmp/configs/known_hosts
+              mountPath: /mnt/config/known_hosts
               subPath: known_hosts
               readOnly: true
             - name: ssh-config-volume
-              mountPath: /tmp/configs/authorized_keys
+              mountPath: /mnt/config/authorized_keys
               subPath: authorized_keys
               readOnly: true
+            - name: temp-volume
+              mountPath: /tmp
       volumes:
         - name: ssh-key-volume
           secret:
@@ -52,6 +53,9 @@ spec:
           configMap:
             name: ssh-config
             defaultMode: 0444
+        - name: temp-volume
+          emptyDir:
+            medium: Memory
       restartPolicy: Always
       nodeSelector:
         kubernetes.io/os: linux
